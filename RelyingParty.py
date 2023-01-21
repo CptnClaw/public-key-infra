@@ -10,6 +10,8 @@ class RelyingParty:
         need_ca = False
         for cert in certificates:
             # Basic checks on cert
+            if cert.is_revoked:
+                verified = False
             if cert.body.exp_date == None:  # TODO: Implement dates comparison
                 verified = False
             if need_ca and cert.body.is_ca == False:

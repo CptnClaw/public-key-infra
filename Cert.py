@@ -4,6 +4,7 @@ class Cert():
         self.body = certbody
         self.issuer = issuer
         self.signature = signature
+        self.is_revoked = False
 
 
 class CertBody():

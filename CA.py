@@ -11,4 +11,9 @@ class CA(Entity):
         signature = self.sign(certbody)
         return Cert(certbody, self.name, signature)
 
+    def revoke(self, cert):
+        # This CA revoked anything on demand.
+        # Currently seems as a static func, but generally revoking is stateful
+        cert.is_revoked = True
+        
 

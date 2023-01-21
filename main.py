@@ -32,13 +32,18 @@ def lookup_cert(name):
     raise KeyError
 
 
-def gen_cert_sequence(start_cert):
-    cert = start_cert
+def gen_cert_sequence(start_cert_name):
+    cert = lookup_cert(start_cert_name)
     sequence = [cert]
     while cert.issuer != None:
         cert = lookup_cert(cert.issuer)
         sequence += [cert]
     return sequence
+
+
+def verify(obj, signature, signee_name):
+    cert_seq = gen_cert_sequence(signee_name)
+    return RelyingParty.verify(obj, signature, cert_seq)
 
 
 if __name__ == '__main__':
@@ -67,24 +72,28 @@ if __name__ == '__main__':
     gen_cert(www, NEXT_MONTH, huji)
     gen_cert(math, NEXT_MONTH, huji)
     gen_cert(moodle, NEXT_MONTH, huji)
+    www_seq = gen_cert_sequence(www.name)
+    math_seq = gen_cert_sequence(math.name)
+    moodle_seq = gen_cert_sequence(moodle.name)
 
     # Sign some IP addresses
     ip_www = '128.139.7.8'
     ip_math = '128.139.7.33'
     ip_moodle = '132.65.118.159'
-    sgn1, cert1 = www.sign(ip_www)
-    sgn2, cert2 = math.sign(ip_math)
-    sgn3, cert3 = moodle.sign(ip_moodle)
+    sgn1 = www.sign(ip_www)
+    sgn2 = math.sign(ip_math)
+    sgn3 = moodle.sign(ip_moodle)
 
     # Verify 
-    cert_seq1 = gen_cert_sequence(cert1)
-    verify1 = RelyingParty.verify(ip_www, sgn1, cert_seq1)
-    cert_seq2 = gen_cert_sequence(cert2)
-    verify2 = RelyingParty.verify(ip_www, sgn2, cert_seq2)
-    cert_seq3 = gen_cert_sequence(cert3)
-    verify3 = RelyingParty.verify(ip_www, sgn3, cert_seq3)
+    verify1 = verify(ip_www, sgn1, www.name)        # True
+    verify2 = verify(ip_math, sgn2, math.name)      # True
+    verify3 = verify(ip_moodle, sgn3, moodle.name)  # True
+    verify4 = verify(ip_moodle, sgn2, moodle.name)  # False (incorrect sgn)
+    verify5 = verify(ip_moodle, sgn3, math.name)    # False (incorrect crt)
+    root.revoke(lookup_cert('ac.il'))
+    verify6 = verify(ip_www, sgn1, www.name)        # False (revoked crt)
 
-    print(verify1, verify2, verify3)
+    print(verify1, verify2, verify3, verify4, verify5, verify6)
 
 
 
